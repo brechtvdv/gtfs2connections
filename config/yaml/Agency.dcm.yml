@@ -1,0 +1,23 @@
+Agency:
+  type: entity
+  table: agency
+  id:
+    agencyId:
+      type: string
+      nullable: TRUE
+  fields:
+    agencyName:
+      type: string
+    agencyUrl:
+      type: string
+    agencyTimezone:
+      type: string
+    agencyLang:
+      type: string
+      nullable: TRUE
+    agencyPhone:
+      type: string
+      nullable: TRUE
+    agencyFareUrl:
+      type: string
+      nullable: TRUE

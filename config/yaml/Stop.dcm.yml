@@ -1,0 +1,42 @@
+Stop:
+  type: entity
+  table: stops
+  indexes:
+    STOPS_STOP_CODE_IND:
+      columns: [ stopCode ]
+    STOPS_STOP_NAME_IND:
+      columns: [ stopName ]
+  id:
+    stopId:
+      type: string
+  fields:
+    stopCode:
+      type: string
+      nullable: TRUE
+    stopName:
+      type: string
+    stopDesc:
+      type: string
+      nullable: TRUE
+    stopLat:
+      type: float
+    stopLon:
+      type: float
+    zoneId:
+      type: string
+      nullable: TRUE
+    stopUrl:
+      type: string
+      nullable: TRUE
+    locationType:
+      type: string
+      nullable: TRUE
+    parentStation:
+      type: string
+      nullable: TRUE
+    stopTimezone:
+      type: string
+      nullable: TRUE
+    wheelchairBoarding:
+      type: integer
+      nullable: TRUE

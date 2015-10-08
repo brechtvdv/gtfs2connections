@@ -1,0 +1,45 @@
+Stoptime:
+  type: entity
+  table: stoptimes
+  indexes:
+    STOP_TIMES_STOP_ID_IND:
+      columns: [ stopId ]
+    STOP_TIMES_DEPARTURE_TIME_IND:
+      columns: [ departureTime ]
+  id:
+    id:
+      type: integer
+      generator:
+        strategy: AUTO
+  fields:
+    tripId:
+        type: string
+    arrivalTime:
+      type: time
+    departureTime:
+      type: time
+    stopId:
+      type: string
+    stopSequence:
+      type: integer
+    maxStopSequence:
+      type: integer
+    arrivalAfterMidnight:
+      type: boolean
+    departureAfterMidnight:
+      type: boolean
+    stopHeadsign:
+      type: string
+      nullable: TRUE
+    pickupType:
+      type: string
+      nullable: TRUE
+    dropOffType:
+      type: integer
+      nullable: TRUE
+    shapeDistTraveled:
+      type: string
+      nullable: TRUE
+    timepoint:
+      type: integer
+      nullable: TRUE

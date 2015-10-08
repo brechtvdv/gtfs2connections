@@ -1,0 +1,18 @@
+CalendarDate:
+  type: entity
+  table: calendarDates
+  indexes:
+    CALENDAR_DATES_SERVICE_ID_IND:
+      columns: [ serviceId ]
+  id:
+    id:
+      type: integer
+      generator:
+        strategy: AUTO
+  fields:
+    serviceId:
+      type: string
+    date:
+      type: date
+    exceptionType:
+      type: integer

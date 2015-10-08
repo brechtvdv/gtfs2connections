@@ -1,0 +1,28 @@
+Route:
+  type: entity
+  table: routes
+  id:
+    routeId:
+      type: string
+  fields:
+    agencyId:
+      type: string
+      nullable: TRUE
+    routeShortName:
+      type: string
+    routeLongName:
+      type: string
+    routeDesc:
+      type: string
+      nullable: TRUE
+    routeType:
+      type: integer
+    routeUrl:
+      type: string
+      nullable: TRUE
+    routeColor:
+      type: string
+      nullable: TRUE
+    routeTextColor:
+      type: string
+      nullable: TRUE

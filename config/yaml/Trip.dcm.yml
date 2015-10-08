@@ -1,0 +1,32 @@
+Trip:
+  type: entity
+  table: trips
+  id:
+    tripId:
+      type: string
+  fields:
+    routeId:
+      type: string
+    serviceId:
+      type: string
+    tripHeadSign:
+      type: string
+      nullable: TRUE
+    tripShortName:
+      type: string
+      nullable: TRUE
+    directionId:
+      type: string
+      nullable: TRUE
+    blockId:
+      type: string
+      nullable: TRUE
+    shapeId:
+      type: string
+      nullable: TRUE
+    wheelchairAccessible:
+      type: integer
+      nullable: TRUE
+    bikesAllowed:
+      type: integer
+      nullable: TRUE

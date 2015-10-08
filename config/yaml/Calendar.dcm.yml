@@ -1,0 +1,25 @@
+Calendar:
+  type: entity
+  table: calendars
+  id:
+    serviceId:
+      type: string
+  fields:
+    monday:
+      type: integer
+    tuesday:
+      type: integer
+    wednesday:
+      type: integer
+    thursday:
+      type: integer
+    friday:
+      type: integer
+    saturday:
+      type: integer
+    sunday:
+      type: integer
+    startDate:
+      type: date
+    endDate:
+      type: date
