@@ -3,12 +3,14 @@
     "description": "GTFS transformer to connections",
     "version": "0.0.1",
     "license": "MIT",
-    "authors": {
-      "name": "Brecht Van de Vyvere",
-      "email": "brecht@iRail.be",
-      "homepage": "https://github.com/brechtvdv/",
-      "role": "Developer"
-    },
+    "authors": [
+        {
+            "name": "Brecht Van de Vyvere",
+            "email": "brecht@iRail.be",
+            "homepage": "https://github.com/brechtvdv/",
+            "role": "Developer"
+        }
+    ],
     "keywords": [ "gtfs", "linked connections" ],
     "require": {
         "doctrine/orm": "2.4.*",
