@@ -5,6 +5,7 @@
  * Status: only feeds with calendar_dates.txt
  *
  */
+ini_set('memory_limit', '-1'); // Although variables are always unset, just to make sure the script doesn't stop because it reached it's limit
 
 require_once "bootstrap.php";
 
@@ -226,6 +227,8 @@ if (count($calendars) > 0) {
             $tripPointer = current($tripData);
             if ($date == strtotime('-1 day', strtotime($startDate_))) {
                 $AMOUNTOFTRIPS = 20000; // There are not much stoptimes after midnight, so we can make this bigger
+            } else if ($date == strtotime($endDate_)) {
+                $AMOUNTOFTRIPS = 1000;
             } else {
                 $AMOUNTOFTRIPS = 2000; // How much trips we'll fetch the stoptimes from, to prevent memory shortage
             }
@@ -246,15 +249,18 @@ if (count($calendars) > 0) {
                 if ($date == strtotime('-1 day', strtotime($startDate_))) {
                     // Add stoptimes that depart after midnight
                     $stopTimes = queryStoptimesAfterMidnight($tripIdsString, $entityManager);
+                    // these stoptimes happen actually on the next day because it's after midnight
+                    stopTimesToConnections($stopTimes, $tripData, strtotime($startDate_));
                 } else if ($date != strtotime($endDate_)) {
                     // Add all stoptimes
                     $stopTimes = queryStoptimes($tripIdsString, $entityManager);
+                    stopTimesToConnections($stopTimes, $tripData, $date);
                 } else {
                     // Only stoptimes before midnight
                     $stopTimes = queryStoptimesBeforeMidnight($tripIdsString, $entityManager);
+                    stopTimesToConnections($stopTimes, $tripData, $date);
                 }
 
-                stopTimesToConnections($stopTimes, $tripData, $date);
                 unset($stopTimes);
             }
         }
