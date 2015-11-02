@@ -50,6 +50,14 @@ Fill in your MySQL credentials inside ```db-config.php```.
 scripts/init.sh path-to-gtfs.zip
 ```
 
+### (Optional) Step 3: Load connection stop_ids
+To enable interoperability between different operators, generate a CSV-file that maps neighbour stops to one "connection stop":
+[connection stops](https://github.com/brechtvdv/gtfs-connectionstops)
+
+```bash
+php scripts/load_connection_stops.php connection-stops.txt
+```
+
 ### Step 3: Run connections generator script
 
 ```bash

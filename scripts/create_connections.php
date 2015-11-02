@@ -329,7 +329,7 @@ function getTripDataWithServiceIds($serviceIds, $entityManager) {
  */
 function queryStoptimes($tripIdsString, $entityManager) {
     $sql = "
-            SELECT tripId, arrivalTime, departureTime, stopId
+            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId
               FROM stoptimes
                 -- JOIN stops
                 --  ON stops.stopId = stoptimes.stopId
@@ -350,7 +350,7 @@ function queryStoptimes($tripIdsString, $entityManager) {
  */
 function queryStoptimesAfterMidnight($tripIdsString, $entityManager) {
     $sql = "
-            SELECT tripId, arrivalTime, departureTime, stopId
+            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId
               FROM stoptimes
                 -- JOIN stops
                 --  ON stops.stopId = stoptimes.stopId
@@ -372,7 +372,7 @@ function queryStoptimesAfterMidnight($tripIdsString, $entityManager) {
  */
 function queryStoptimesBeforeMidnight($tripIdsString, $entityManager) {
     $sql = "
-            SELECT tripId, arrivalTime, departureTime, stopId
+            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId
               FROM stoptimes
                 -- JOIN stops
                 --  ON stops.stopId = stoptimes.stopId
@@ -423,13 +423,25 @@ function generateConnection($stopTime1, $stopTime2, $tripData, $time, $connectio
     $departureTime = date('Y-m-d', $time) . 'T' . $stopTime1['departureTime'] . '.000Z';
     $arrivalTime = date('Y-m-d', $time) . 'T' . $stopTime2['arrivalTime'] . '.000Z';
 
+    if ($stopTime1['connectionStopId'] != null) {
+        $stop1 = $stopTime1['connectionStopId'];
+    } else {
+        $stop1 = $stopTime1['stopId'];
+    }
+
+    if ($stopTime2['connectionStopId'] != null) {
+        $stop2 = $stopTime2['connectionStopId'];
+    } else {
+        $stop2 = $stopTime2['stopId'];
+    }
+
     return [
         '@type' => 'Connection',
         '@id' => 'connection:' . $connectionNr,
         'arrivalTime' => $arrivalTime,
-        'arrivalStop' => $stopTime2['stopId'],
+        'arrivalStop' => $stop2,
         'departureTime' => $departureTime,
-        'departureStop' => $stopTime1['stopId'],
+        'departureStop' => $stop1,
         'trip' => $stopTime2['tripId'],
         'route' => $tripData[$stopTime1['tripId']]['routeId'],
         'headsign' => $tripData[$stopTime1['tripId']]['tripHeadSign']

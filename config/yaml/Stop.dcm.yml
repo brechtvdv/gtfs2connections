@@ -40,3 +40,6 @@ Stop:
     wheelchairBoarding:
       type: integer
       nullable: TRUE
+    connectionStopId:
+      type: string
+      nullable: TRUE

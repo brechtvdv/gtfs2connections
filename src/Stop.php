@@ -53,6 +53,10 @@ class Stop
      * @var int
      */
     protected $wheelchairBoarding = null;
+    /**
+     * @var string
+     */
+    protected $connectionStopId = null;
 
     /**
      * @return string
@@ -244,5 +248,21 @@ class Stop
     public function setWheelchairBoarding($wheelchairBoarding)
     {
         $this->wheelchairBoarding = $wheelchairBoarding;
+    }
+
+    /**
+     * @return string
+     */
+    public function getConnectionStopId()
+    {
+        return $this->connectionStopId;
+    }
+
+    /**
+     * @param string $connectionStopId
+     */
+    public function setConnectionStopId($connectionStopId)
+    {
+        $this->connectionStopId = $connectionStopId;
     }
 }

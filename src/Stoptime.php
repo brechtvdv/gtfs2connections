@@ -61,6 +61,10 @@ class Stoptime
      * @var int
      */
     protected $timepoint = null;
+    /**
+     * @var string
+     */
+    protected $connectionStopId = null;
 
     /**
      * @return int
@@ -275,5 +279,21 @@ class Stoptime
     public function setTimepoint($timepoint)
     {
         $this->timepoint = $timepoint;
+    }
+
+    /**
+     * @return string
+     */
+    public function getConnectionStopId()
+    {
+        return $this->connectionStopId;
+    }
+
+    /**
+     * @param string $connectionStopId
+     */
+    public function setConnectionStopId($connectionStopId)
+    {
+        $this->connectionStopId = $connectionStopId;
     }
 }
