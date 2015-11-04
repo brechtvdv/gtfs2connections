@@ -43,6 +43,16 @@ $date_serviceIdsArray = [];
 
 $connectionsCounter = 1; // counter for connection identifier
 
+// Associative array of stops that hold for every stop:
+// Direct reachable stop (from some trip) + minimum time
+$MST = []; // Todo search datastructure to find in O(1) minimum: $mst['ex1]['neigh1'] if exists...
+$mstFilename = 'dist/mst-' . $agencyId . '.txt';
+
+// delete previous file
+if (file_exists($mstFilename)) {
+    unlink($mstFilename);
+}
+
 // Let's generate list of dates with corresponding serviceId from calendars first
 $sql = "
         SELECT *
@@ -270,6 +280,9 @@ if (count($calendars) > 0) {
     }
 }
 
+// write MST of all stops to CSV file
+writeMST($MST);
+
 /**
  * @param $time
  * @param $entityManager
@@ -394,21 +407,71 @@ function queryStoptimesBeforeMidnight($tripIdsString, $entityManager) {
  */
 function stopTimesToConnections($stopTimes, $tripData, $time) {
     global $connectionsFilename, $connectionsCounter;
+    $localMST = []; // array of stops with [ other reachable stop_id, minimum time to get there from previous stop, arrival time stop_id]
+    $j = 0; // Points to location to add new stop in MST
 
     if (count($stopTimes) > 0) {
-        $prevStopTime = $stopTimes[0]; // We'll keep track of previous. Connection = departure stoptime1 + arrival stoptime2
+        $prevStopTime = replaceWithConnectionStopId($stopTimes[0]); // We'll keep track of previous. Connection = departure stoptime1 + arrival stoptime2
+        $localMST[$j] = [$prevStopTime['stopId'], 0, strtotime($prevStopTime['departureTime'])]; // Minimum time is amount of seconds between previous stop and current stop
+        $j++;
+
         for ($i = 1; $i < count($stopTimes); $i++) {
-            $stopTime = $stopTimes[$i];
+            $stopTime = replaceWithConnectionStopId($stopTimes[$i]);
 
             // Same trip
             if ($stopTime['tripId'] === $prevStopTime['tripId']) {
+                $localMST[] = [$stopTime['stopId'], strtotime($stopTime['arrivalTime']) - $localMST[$j-1][2], strtotime($stopTime['arrivalTime'])];
+                $j++;
                 writeToFile($connectionsFilename, generateConnection($prevStopTime, $stopTime, $tripData, $time, $connectionsCounter));
                 $connectionsCounter++;
+            } else {
+                updateMST($localMST);
+                $localMST = [];
+                $j = 0; // reset
+                $localMST[$j] = [$stopTime['stopId'], 0, strtotime($stopTime['departureTime'])];
+                $j++;
             }
 
             $prevStopTime = $stopTime;
         }
+
+        updateMST($localMST);
     }
+}
+
+/*
+ * Updates the current MST of every stop if there is a faster travel time between two reachable stops
+ */
+function updateMST($localMST) {
+    global $MST;
+
+    for ($start=0; $start<count($localMST)-1; $start++) {
+        $sumWeights = 0;
+        for ($end=$start+1; $end<count($localMST); $end++) {
+            $startStopId = $localMST[$start][0];
+            $endStopId = $localMST[$end][0];
+            $sumWeights += $localMST[$end][1];
+
+            if (!isset($MST[$startStopId])) {
+                $MST[$startStopId] = [];
+            }
+
+            // New minimum time
+            if (!isset($MST[$startStopId][$endStopId]) || $sumWeights < $MST[$startStopId][$endStopId]) {
+                $MST[$startStopId][$endStopId] = $sumWeights;
+            }
+        }
+    }
+}
+
+/*
+ * Replaces stop_id with connection_stop_id if available
+ */
+function replaceWithConnectionStopId($stopTime) {
+    if ($stopTime['connectionStopId'] != null) {
+        $stopTime['stopId'] = $stopTime['connectionStopId'];
+    }
+    return $stopTime;
 }
 
 /**
@@ -423,25 +486,13 @@ function generateConnection($stopTime1, $stopTime2, $tripData, $time, $connectio
     $departureTime = date('Y-m-d', $time) . 'T' . $stopTime1['departureTime'] . '.000Z';
     $arrivalTime = date('Y-m-d', $time) . 'T' . $stopTime2['arrivalTime'] . '.000Z';
 
-    if ($stopTime1['connectionStopId'] != null) {
-        $stop1 = $stopTime1['connectionStopId'];
-    } else {
-        $stop1 = $stopTime1['stopId'];
-    }
-
-    if ($stopTime2['connectionStopId'] != null) {
-        $stop2 = $stopTime2['connectionStopId'];
-    } else {
-        $stop2 = $stopTime2['stopId'];
-    }
-
     return [
         '@type' => 'Connection',
         '@id' => 'connection:' . $connectionNr,
         'arrivalTime' => $arrivalTime,
-        'arrivalStop' => $stop2,
+        'arrivalStop' => $stopTime2['stopId'],
         'departureTime' => $departureTime,
-        'departureStop' => $stop1,
+        'departureStop' => $stopTime1['stopId'],
         'trip' => $stopTime2['tripId'],
         'route' => $tripData[$stopTime1['tripId']]['routeId'],
         'headsign' => $tripData[$stopTime1['tripId']]['tripHeadSign']
@@ -505,4 +556,27 @@ function writeToFile($filename, $data) {
     $json = $builder->build();
 
     file_put_contents($filename, $json.PHP_EOL, FILE_APPEND);
+}
+
+/*
+ * Writes minimum spanning trees for every stop to a CSV file with following columns:
+ * start_stop_id,end_stop_id,minimum_time
+ */
+function writeMST($MST) {
+    global $mstFilename;
+
+    // Add header
+    $csv = 'start_stop_id,end_stop_id,minimum_time_seconds';
+    appendCSV($mstFilename, $csv);
+
+    foreach ($MST as $start_stop_id => $neighbours) {
+        foreach ($neighbours as $neighbour_stop_id => $minimum_time) {
+            $csv = $start_stop_id . ',' . $neighbour_stop_id . ',' . $minimum_time;
+            appendCSV($mstFilename, $csv);
+        }
+    }
+}
+
+function appendCSV($dist, $csv) {
+    file_put_contents($dist, trim($csv).PHP_EOL, FILE_APPEND);
 }

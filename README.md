@@ -58,7 +58,7 @@ To enable interoperability between different operators, generate a CSV-file that
 php scripts/load_connection_stops.php connection-stops.txt
 ```
 
-### Step 3: Run connections generator script
+### Step 4: Run connections generator script
 
 ```bash
 php scripts/create_connections.php [startDate] [endDate]
@@ -68,6 +68,6 @@ The format of date parameters must be 'YYYY-MM-DD'.
 
 Note: optional parameters ```startDate``` and ```endDate``` only work when there are no calendars.
 
-### Step 4: Done
+### Step 5: Done
 
 You can find connections-[agency_id].jsonldstream in ```dist``` folder.
