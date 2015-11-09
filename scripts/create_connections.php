@@ -450,7 +450,7 @@ function updateMST($localMST) {
         for ($end=$start+1; $end<count($localMST); $end++) {
             $startStopId = $localMST[$start][0];
             $endStopId = $localMST[$end][0];
-            $sumWeights += $localMST[$end][1];
+            $sumWeights += $localMST[$end][1] > 0 ? $localMST[$end][1] : 0; // When negative, two stops are the same
 
             if (!isset($MST[$startStopId])) {
                 $MST[$startStopId] = [];
