@@ -2,7 +2,7 @@
 
 require_once "bootstrap.php";
 
-date_default_timezone_set('UTC');
+date_default_timezone_set('Europe/Brussels');
 
 $file_stop_times = $argv[1];
 
@@ -161,11 +161,11 @@ function save($stoptime, $property, $value) {
             $stoptime->setTripId($value);
             break;
         case 'arrival_time':
-            $arrival_time = \DateTime::createFromFormat('H:i:s', $value);
+            $arrival_time = \DateTime::createFromFormat('H:i:s', $value)->sub(new DateInterval('PT3600S')); // Connections are output in UTC timezone (Europe/Brussels -1 hour)
             $stoptime->setArrivalTime($arrival_time);
             break;
         case 'departure_time':
-            $departure_time = \DateTime::createFromFormat('H:i:s', $value);
+            $departure_time = \DateTime::createFromFormat('H:i:s', $value)->sub(new DateInterval('PT3600S')); // Connections are output in UTC timezone (Europe/Brussels -1 hour)
             $stoptime->setDepartureTime($departure_time);
             break;
         case 'stop_id':

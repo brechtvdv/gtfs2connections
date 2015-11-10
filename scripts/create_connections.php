@@ -11,7 +11,7 @@ require_once "bootstrap.php";
 
 use Ivory\JsonBuilder\JsonBuilder;
 
-date_default_timezone_set('UTC');
+date_default_timezone_set('Europe/Brussels');
 
 // get agencyId for output filename
 $sql = "
@@ -45,7 +45,7 @@ $connectionsCounter = 1; // counter for connection identifier
 
 // Associative array of stops that hold for every stop:
 // Direct reachable stop (from some trip) + minimum time
-$MST = []; // Todo search datastructure to find in O(1) minimum: $mst['ex1]['neigh1'] if exists...
+$MST = [];
 $mstFilename = 'dist/mst-' . $agencyId . '.txt';
 
 // delete previous file
@@ -267,8 +267,28 @@ if (count($calendars) > 0) {
                     stopTimesToConnections($stopTimes, $tripData, $date);
                 } else {
                     // Only stoptimes before midnight
-                    $stopTimes = queryStoptimesBeforeMidnight($tripIdsString, $entityManager);
-                    stopTimesToConnections($stopTimes, $tripData, $date);
+                    $stopTimes = queryStoptimes($tripIdsString, $entityManager);
+                    $stopTimesBeforeMidnight = [];
+                    $next = true;
+                    if (count($stopTimes) > 0) {
+                        // Take only stoptimes until one arrives after midnight
+                        $first = $stopTimes[0];
+                        $stopTimesBeforeMidnight[] = $first;
+                        for ($z = 1; $z < count($stopTimes); $z++) {
+                             $second = $stopTimes[$z];
+                            if ($second['arrivalAfterMidnight']) {
+                                if ($next) {
+                                    // last one of this trip
+                                    $stopTimesBeforeMidnight[] = $second;
+                                    $next = false;
+                                }
+                            } else {
+                                $stopTimesBeforeMidnight[] = $second;
+                                $next = true;
+                            }
+                        }
+                        stopTimesToConnections($stopTimesBeforeMidnight, $tripData, $date);
+                    }
                 }
 
                 unset($stopTimes);
@@ -342,7 +362,7 @@ function getTripDataWithServiceIds($serviceIds, $entityManager) {
  */
 function queryStoptimes($tripIdsString, $entityManager) {
     $sql = "
-            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId
+            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId, arrivalAfterMidnight, departureAfterMidnight
               FROM stoptimes
                 -- JOIN stops
                 --  ON stops.stopId = stoptimes.stopId
@@ -369,28 +389,6 @@ function queryStoptimesAfterMidnight($tripIdsString, $entityManager) {
                 --  ON stops.stopId = stoptimes.stopId
               WHERE stoptimes.tripId IN ( $tripIdsString )
               AND stoptimes.departureAfterMidnight
-        ";
-
-    $stmt = $entityManager->getConnection()->prepare($sql);
-    $stmt->execute();
-    return $stmt->fetchAll();
-}
-
-/**
- * Queries stoptimes with certain tripIds that happen before midnight.
- *
- * @param string $tripIdsString String of concatenated tripIds (of one day).
- * @param mixed $entityManager Entity manager of Doctrine.
- * @return array Stoptimes with corresponding tripId.
- */
-function queryStoptimesBeforeMidnight($tripIdsString, $entityManager) {
-    $sql = "
-            SELECT tripId, arrivalTime, departureTime, stopId, connectionStopId
-              FROM stoptimes
-                -- JOIN stops
-                --  ON stops.stopId = stoptimes.stopId
-              WHERE stoptimes.tripId IN ( $tripIdsString )
-              AND NOT stoptimes.departureAfterMidnight
         ";
 
     $stmt = $entityManager->getConnection()->prepare($sql);
@@ -483,8 +481,17 @@ function replaceWithConnectionStopId($stopTime) {
  * @return array Connection.
  */
 function generateConnection($stopTime1, $stopTime2, $tripData, $time, $connectionNr) {
-    $departureTime = date('Y-m-d', $time) . 'T' . $stopTime1['departureTime'] . '.000Z';
-    $arrivalTime = date('Y-m-d', $time) . 'T' . $stopTime2['arrivalTime'] . '.000Z';
+    $nextDate = date('Y-m-d', strtotime('+1 day', $time));
+    if (isset($stopTime1['departureAfterMidnight']) && $stopTime1['departureAfterMidnight']) {
+        $departureTime = $nextDate . 'T' . $stopTime1['departureTime'] . '.000Z';
+    } else {
+        $departureTime = date('Y-m-d', $time) . 'T' . $stopTime1['departureTime'] . '.000Z';
+    }
+    if (isset($stopTime2['arrivalAfterMidnight']) && $stopTime2['arrivalAfterMidnight']) {
+        $arrivalTime = $nextDate . 'T' . $stopTime2['arrivalTime'] . '.000Z';
+    } else {
+        $arrivalTime = date('Y-m-d', $time) . 'T' . $stopTime2['arrivalTime'] . '.000Z';
+    }
 
     return [
         '@type' => 'Connection',
