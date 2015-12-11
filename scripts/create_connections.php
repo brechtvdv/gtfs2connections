@@ -45,12 +45,12 @@ $connectionsCounter = 1; // counter for connection identifier
 
 // Associative array of stops that hold for every stop:
 // Direct reachable stop (from some trip) + minimum time
-$MST = [];
-$mstFilename = 'dist/mst-' . $agencyId . '.txt';
+$DRS = [];
+$drsFilename = 'dist/drs-' . $agencyId . '.txt';
 
 // delete previous file
-if (file_exists($mstFilename)) {
-    unlink($mstFilename);
+if (file_exists($drsFilename)) {
+    unlink($drsFilename);
 }
 
 // Let's generate list of dates with corresponding serviceId from calendars first
@@ -300,8 +300,8 @@ if (count($calendars) > 0) {
     }
 }
 
-// write MST of all stops to CSV file
-writeMST($MST);
+// write DRS (Direct Reachable Stops) of all stops to CSV file
+writeDRS($DRS);
 
 /**
  * @param $time
@@ -405,12 +405,12 @@ function queryStoptimesAfterMidnight($tripIdsString, $entityManager) {
  */
 function stopTimesToConnections($stopTimes, $tripData, $time) {
     global $connectionsFilename, $connectionsCounter;
-    $localMST = []; // array of stops with [ other reachable stop_id, minimum time to get there from previous stop, arrival time stop_id]
-    $j = 0; // Points to location to add new stop in MST
+    $localDRS = []; // array of stops with [ other reachable stop_id, minimum time to get there from previous stop, arrival time stop_id]
+    $j = 0; // Points to location to add new stop in DRS
 
     if (count($stopTimes) > 0) {
         $prevStopTime = replaceWithConnectionStopId($stopTimes[0]); // We'll keep track of previous. Connection = departure stoptime1 + arrival stoptime2
-        $localMST[$j] = [$prevStopTime['stopId'], 0, strtotime($prevStopTime['departureTime'])]; // Minimum time is amount of seconds between previous stop and current stop
+        $localDRS[$j] = [$prevStopTime['stopId'], 0, strtotime($prevStopTime['departureTime'])]; // Minimum time is amount of seconds between previous stop and current stop
         $j++;
 
         for ($i = 1; $i < count($stopTimes); $i++) {
@@ -418,45 +418,45 @@ function stopTimesToConnections($stopTimes, $tripData, $time) {
 
             // Same trip
             if ($stopTime['tripId'] === $prevStopTime['tripId']) {
-                $localMST[] = [$stopTime['stopId'], strtotime($stopTime['arrivalTime']) - $localMST[$j-1][2], strtotime($stopTime['arrivalTime'])];
+                $localDRS[] = [$stopTime['stopId'], strtotime($stopTime['arrivalTime']) - $localDRS[$j-1][2], strtotime($stopTime['arrivalTime'])];
                 $j++;
                 writeToFile($connectionsFilename, generateConnection($prevStopTime, $stopTime, $tripData, $time, $connectionsCounter));
                 $connectionsCounter++;
             } else {
-                updateMST($localMST);
-                $localMST = [];
+                updateDRS($localDRS);
+                $localDRS = [];
                 $j = 0; // reset
-                $localMST[$j] = [$stopTime['stopId'], 0, strtotime($stopTime['departureTime'])];
+                $localDRS[$j] = [$stopTime['stopId'], 0, strtotime($stopTime['departureTime'])];
                 $j++;
             }
 
             $prevStopTime = $stopTime;
         }
 
-        updateMST($localMST);
+        updateDRS($localDRS);
     }
 }
 
 /*
- * Updates the current MST of every stop if there is a faster travel time between two reachable stops
+ * Updates the current DRS of every stop if there is a faster travel time between two reachable stops
  */
-function updateMST($localMST) {
-    global $MST;
+function updateDRS($localDRS) {
+    global $DRS;
 
-    for ($start=0; $start<count($localMST)-1; $start++) {
+    for ($start=0; $start<count($localDRS)-1; $start++) {
         $sumWeights = 0;
-        for ($end=$start+1; $end<count($localMST); $end++) {
-            $startStopId = $localMST[$start][0];
-            $endStopId = $localMST[$end][0];
-            $sumWeights += $localMST[$end][1] > 0 ? $localMST[$end][1] : 0; // When negative, two stops are the same
+        for ($end=$start+1; $end<count($localDRS); $end++) {
+            $startStopId = $localDRS[$start][0];
+            $endStopId = $localDRS[$end][0];
+            $sumWeights += $localDRS[$end][1] > 0 ? $localDRS[$end][1] : 0; // When negative, two stops are the same
 
-            if (!isset($MST[$startStopId])) {
-                $MST[$startStopId] = [];
+            if (!isset($DRS[$startStopId])) {
+                $DRS[$startStopId] = [];
             }
 
             // New minimum time
-            if (!isset($MST[$startStopId][$endStopId]) || $sumWeights < $MST[$startStopId][$endStopId]) {
-                $MST[$startStopId][$endStopId] = $sumWeights;
+            if (!isset($DRS[$startStopId][$endStopId]) || $sumWeights < $DRS[$startStopId][$endStopId]) {
+                $DRS[$startStopId][$endStopId] = $sumWeights;
             }
         }
     }
@@ -566,20 +566,20 @@ function writeToFile($filename, $data) {
 }
 
 /*
- * Writes minimum spanning trees for every stop to a CSV file with following columns:
+ * Writes Direct Reachable Stops for every stop to a CSV file with following columns:
  * start_stop_id,end_stop_id,minimum_time
  */
-function writeMST($MST) {
-    global $mstFilename;
+function writeDRS($DRS) {
+    global $drsFilename;
 
     // Add header
     $csv = 'start_stop_id,end_stop_id,minimum_time_seconds';
-    appendCSV($mstFilename, $csv);
+    appendCSV($drsFilename, $csv);
 
-    foreach ($MST as $start_stop_id => $neighbours) {
+    foreach ($DRS as $start_stop_id => $neighbours) {
         foreach ($neighbours as $neighbour_stop_id => $minimum_time) {
             $csv = $start_stop_id . ',' . $neighbour_stop_id . ',' . $minimum_time;
-            appendCSV($mstFilename, $csv);
+            appendCSV($drsFilename, $csv);
         }
     }
 }
